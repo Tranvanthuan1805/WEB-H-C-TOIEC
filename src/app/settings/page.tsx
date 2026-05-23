@@ -10,17 +10,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAppStore } from "@/store/useAppStore";
 import { translations } from "@/lib/translations";
-import { cn } from "@/lib/utils";
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
   const { locale, setLocale, telegramToken, telegramChatId, setTelegramConfig, toeicTarget, setToeicTarget } = useAppStore();
   const t = translations[locale];
-  const [tgToken, setTgToken] = useState(telegramToken);
-  const [tgChatId, setTgChatId] = useState(telegramChatId);
+  const [tgToken, setTgToken]       = useState(telegramToken);
+  const [tgChatId, setTgChatId]     = useState(telegramChatId);
   const [targetScore, setTargetScore] = useState(toeicTarget);
-  const [apiKey, setApiKey] = useState("");
-  const [testingTg, setTestingTg] = useState(false);
+  const [apiKey, setApiKey]         = useState("");
+  const [testingTg, setTestingTg]   = useState(false);
 
   function saveTelegram() {
     setTelegramConfig(tgToken, tgChatId);
@@ -63,6 +62,17 @@ export default function SettingsPage() {
     setApiKey("");
   }
 
+  const themeOptions = [
+    { value: "light",  label: locale === "vi" ? "Sáng"     : "Light",  icon: Sun      },
+    { value: "dark",   label: locale === "vi" ? "Tối"      : "Dark",   icon: Moon     },
+    { value: "system", label: locale === "vi" ? "Hệ thống" : "System", icon: Settings },
+  ];
+
+  const langOptions = [
+    { value: "vi" as const, label: "🇻🇳 Tiếng Việt", desc: "Giao diện tiếng Việt" },
+    { value: "en" as const, label: "🇺🇸 English",    desc: "English interface"    },
+  ];
+
   return (
     <AppShell>
       <div className="max-w-3xl mx-auto space-y-6">
@@ -71,7 +81,7 @@ export default function SettingsPage() {
             <Settings className="w-6 h-6" />
             {t.settings}
           </h1>
-          <p className="text-sm text-[var(--muted-foreground)] mt-1">
+          <p className="text-sm mt-1" style={{ color: "var(--muted)" }}>
             {locale === "vi" ? "Tùy chỉnh ứng dụng theo ý muốn" : "Customize your experience"}
           </p>
         </div>
@@ -85,28 +95,22 @@ export default function SettingsPage() {
                 {locale === "vi" ? "Giao diện" : "Appearance"}
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <p className="text-sm font-medium mb-3">{locale === "vi" ? "Chế độ màu sắc" : "Color Mode"}</p>
-                <div className="flex gap-3">
-                  {[
-                    { value: "light", label: locale === "vi" ? "Sáng" : "Light", icon: Sun },
-                    { value: "dark", label: locale === "vi" ? "Tối" : "Dark", icon: Moon },
-                    { value: "system", label: locale === "vi" ? "Hệ thống" : "System", icon: Settings },
-                  ].map((opt) => (
-                    <button
-                      key={opt.value}
-                      onClick={() => setTheme(opt.value)}
-                      className={cn(
-                        "flex-1 flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all",
-                        theme === opt.value ? "border-[var(--primary)] bg-[var(--primary)]/5" : "border-[var(--border)] hover:border-[var(--primary)]/30"
-                      )}
-                    >
-                      <opt.icon className={cn("w-5 h-5", theme === opt.value ? "text-[var(--primary)]" : "text-[var(--muted-foreground)]")} />
-                      <span className={cn("text-sm font-medium", theme === opt.value && "text-[var(--primary)]")}>{opt.label}</span>
+            <CardContent>
+              <p className="text-sm font-medium mb-3">{locale === "vi" ? "Chế độ màu sắc" : "Color Mode"}</p>
+              <div className="flex gap-3">
+                {themeOptions.map((opt) => {
+                  const active = theme === opt.value;
+                  return (
+                    <button key={opt.value} onClick={() => setTheme(opt.value)}
+                      className="flex-1 flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all"
+                      style={{ borderColor: active ? "var(--primary)" : "var(--border)", background: active ? "rgba(99,102,241,0.06)" : "transparent" }}
+                      onMouseEnter={(e) => { if (!active) e.currentTarget.style.borderColor = "rgba(99,102,241,0.35)"; }}
+                      onMouseLeave={(e) => { if (!active) e.currentTarget.style.borderColor = "var(--border)"; }}>
+                      <opt.icon className="w-5 h-5" style={{ color: active ? "var(--primary)" : "var(--muted)" }} />
+                      <span className="text-sm font-medium" style={{ color: active ? "var(--primary)" : "var(--foreground)" }}>{opt.label}</span>
                     </button>
-                  ))}
-                </div>
+                  );
+                })}
               </div>
             </CardContent>
           </Card>
@@ -123,23 +127,20 @@ export default function SettingsPage() {
             </CardHeader>
             <CardContent>
               <div className="flex gap-3">
-                {[
-                  { value: "vi" as const, label: "🇻🇳 Tiếng Việt", desc: "Giao diện tiếng Việt" },
-                  { value: "en" as const, label: "🇺🇸 English", desc: "English interface" },
-                ].map((lang) => (
-                  <button
-                    key={lang.value}
-                    onClick={() => setLocale(lang.value)}
-                    className={cn(
-                      "flex-1 p-4 rounded-xl border-2 text-left transition-all",
-                      locale === lang.value ? "border-[var(--primary)] bg-[var(--primary)]/5" : "border-[var(--border)] hover:border-[var(--primary)]/30"
-                    )}
-                  >
-                    <p className={cn("font-semibold", locale === lang.value && "text-[var(--primary)]")}>{lang.label}</p>
-                    <p className="text-xs text-[var(--muted-foreground)] mt-0.5">{lang.desc}</p>
-                    {locale === lang.value && <CheckCircle className="w-4 h-4 text-[var(--primary)] mt-2" />}
-                  </button>
-                ))}
+                {langOptions.map((lang) => {
+                  const active = locale === lang.value;
+                  return (
+                    <button key={lang.value} onClick={() => setLocale(lang.value)}
+                      className="flex-1 p-4 rounded-xl border-2 text-left transition-all"
+                      style={{ borderColor: active ? "var(--primary)" : "var(--border)", background: active ? "rgba(99,102,241,0.06)" : "transparent" }}
+                      onMouseEnter={(e) => { if (!active) e.currentTarget.style.borderColor = "rgba(99,102,241,0.35)"; }}
+                      onMouseLeave={(e) => { if (!active) e.currentTarget.style.borderColor = "var(--border)"; }}>
+                      <p className="font-semibold" style={{ color: active ? "var(--primary)" : "var(--foreground)" }}>{lang.label}</p>
+                      <p className="text-xs mt-0.5" style={{ color: "var(--muted)" }}>{lang.desc}</p>
+                      {active && <CheckCircle className="w-4 h-4 mt-2" style={{ color: "var(--primary)" }} />}
+                    </button>
+                  );
+                })}
               </div>
             </CardContent>
           </Card>
@@ -155,22 +156,24 @@ export default function SettingsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-[var(--muted-foreground)] mb-3">
+              <p className="text-sm mb-3" style={{ color: "var(--muted)" }}>
                 {locale === "vi" ? "Đặt điểm TOEIC mục tiêu của bạn" : "Set your TOEIC target score"}
               </p>
               <div className="flex gap-3 flex-wrap">
-                {[550, 650, 750, 800, 850, 900].map((score) => (
-                  <button
-                    key={score}
-                    onClick={() => setTargetScore(score)}
-                    className={cn(
-                      "px-4 py-2 rounded-xl text-sm font-bold transition-all border-2",
-                      targetScore === score ? "border-[var(--primary)] bg-[var(--primary)] text-white" : "border-[var(--border)] hover:border-[var(--primary)]/50"
-                    )}
-                  >
-                    {score}
-                  </button>
-                ))}
+                {[550, 650, 750, 800, 850, 900].map((score) => {
+                  const active = targetScore === score;
+                  return (
+                    <button key={score} onClick={() => setTargetScore(score)}
+                      className="px-4 py-2 rounded-xl text-sm font-bold transition-all border-2"
+                      style={active
+                        ? { borderColor: "var(--primary)", background: "var(--primary)", color: "white" }
+                        : { borderColor: "var(--border)", color: "var(--foreground)" }}
+                      onMouseEnter={(e) => { if (!active) e.currentTarget.style.borderColor = "rgba(99,102,241,0.5)"; }}
+                      onMouseLeave={(e) => { if (!active) e.currentTarget.style.borderColor = "var(--border)"; }}>
+                      {score}
+                    </button>
+                  );
+                })}
               </div>
               <div className="flex gap-2 mt-4">
                 <Input type="number" value={targetScore} onChange={(e) => setTargetScore(Number(e.target.value))} placeholder="Custom score" min={10} max={990} />
@@ -190,24 +193,25 @@ export default function SettingsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="p-4 rounded-xl bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/30">
-                <p className="text-sm font-medium text-blue-700 dark:text-blue-300 mb-2">
+              <div className="p-4 rounded-xl"
+                style={{ background: "rgba(59,130,246,0.08)", border: "1px solid rgba(59,130,246,0.20)" }}>
+                <p className="text-sm font-medium mb-2" style={{ color: "#3b82f6" }}>
                   {locale === "vi" ? "Hướng dẫn cài đặt:" : "Setup Instructions:"}
                 </p>
-                <ol className="text-xs text-blue-600 dark:text-blue-400 space-y-1.5 list-decimal list-inside">
+                <ol className="text-xs space-y-1.5 list-decimal list-inside" style={{ color: "rgba(59,130,246,0.80)" }}>
                   <li>{locale === "vi" ? "Tìm @BotFather trên Telegram và tạo bot mới" : "Find @BotFather on Telegram and create new bot"}</li>
-                  <li>{locale === "vi" ? "Copy Bot Token vào ô bên dưới" : "Copy Bot Token to field below"}</li>
-                  <li>{locale === "vi" ? "Nhắn tin /start cho bot của bạn" : "Send /start message to your bot"}</li>
-                  <li>{locale === "vi" ? "Tìm Chat ID tại @userinfobot" : "Find Chat ID at @userinfobot"}</li>
+                  <li>{locale === "vi" ? "Copy Bot Token vào ô bên dưới"              : "Copy Bot Token to field below"}</li>
+                  <li>{locale === "vi" ? "Nhắn tin /start cho bot của bạn"            : "Send /start message to your bot"}</li>
+                  <li>{locale === "vi" ? "Tìm Chat ID tại @userinfobot"              : "Find Chat ID at @userinfobot"}</li>
                 </ol>
               </div>
               <div className="space-y-3">
                 <div>
-                  <label className="text-xs font-medium text-[var(--muted-foreground)] mb-1 block">Bot Token</label>
+                  <label className="text-xs font-medium mb-1 block" style={{ color: "var(--muted)" }}>Bot Token</label>
                   <Input value={tgToken} onChange={(e) => setTgToken(e.target.value)} placeholder="1234567890:AAH..." type="password" />
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-[var(--muted-foreground)] mb-1 block">Chat ID</label>
+                  <label className="text-xs font-medium mb-1 block" style={{ color: "var(--muted)" }}>Chat ID</label>
                   <Input value={tgChatId} onChange={(e) => setTgChatId(e.target.value)} placeholder="123456789" />
                 </div>
                 <div className="flex gap-2">
@@ -231,7 +235,7 @@ export default function SettingsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <p className="text-sm text-[var(--muted-foreground)]">
+              <p className="text-sm" style={{ color: "var(--muted)" }}>
                 {locale === "vi"
                   ? "Nhập OpenAI API Key để kích hoạt trợ lý AI. Key sẽ được lưu trong trình duyệt."
                   : "Enter your OpenAI API Key to enable AI assistant. Key is stored in browser only."}
@@ -240,7 +244,7 @@ export default function SettingsPage() {
                 <Input value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder="sk-..." type="password" className="flex-1" />
                 <Button onClick={saveApiKey} disabled={!apiKey.trim()}>{t.save}</Button>
               </div>
-              <div className="flex items-center gap-2 text-xs text-[var(--muted-foreground)]">
+              <div className="flex items-center gap-2 text-xs" style={{ color: "var(--muted)" }}>
                 <Bell className="w-3 h-3" />
                 {locale === "vi" ? "Bạn cũng có thể đặt OPENAI_API_KEY trong file .env.local" : "You can also set OPENAI_API_KEY in .env.local file"}
               </div>
@@ -257,8 +261,8 @@ export default function SettingsPage() {
                   <Settings className="w-8 h-8 text-white" />
                 </div>
                 <h3 className="font-bold text-lg">CEO Dashboard</h3>
-                <p className="text-sm text-[var(--muted-foreground)] mt-1">{locale === "vi" ? "Phiên bản 1.0.0" : "Version 1.0.0"}</p>
-                <p className="text-xs text-[var(--muted-foreground)] mt-2">
+                <p className="text-sm mt-1" style={{ color: "var(--muted)" }}>{locale === "vi" ? "Phiên bản 1.0.0" : "Version 1.0.0"}</p>
+                <p className="text-xs mt-2" style={{ color: "var(--muted)" }}>
                   {locale === "vi" ? "Xây dựng bằng Next.js 16 · Tailwind CSS · Framer Motion" : "Built with Next.js 16 · Tailwind CSS · Framer Motion"}
                 </p>
               </div>
