@@ -1,5 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 
+function getEndpoint(apiKey: string) {
+  if (apiKey.startsWith("sk-or-")) {
+    return {
+      url: "https://openrouter.ai/api/v1/chat/completions",
+      model: "openai/gpt-4o-mini",
+      extraHeaders: { "HTTP-Referer": "https://ceo-dashboard-sep-thuan.vercel.app", "X-Title": "CEO Dashboard" } as Record<string, string>,
+    };
+  }
+  return { url: "https://api.openai.com/v1/chat/completions", model: "gpt-4o-mini", extraHeaders: {} as Record<string, string> };
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { message, context, locale, history } = await req.json();
@@ -8,6 +19,8 @@ export async function POST(req: NextRequest) {
     if (!apiKey) {
       return NextResponse.json({ error: "no_key" }, { status: 503 });
     }
+
+    const { url, model, extraHeaders } = getEndpoint(apiKey);
 
     const systemPrompt = `You are a personal AI assistant for Sếp Thuần (Boss Thuan), a CEO who is also a student.
 ${context}
@@ -27,10 +40,14 @@ Your role:
       { role: "user", content: message },
     ];
 
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    const response = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({ model: "gpt-4o-mini", messages, stream: true, temperature: 0.7, max_tokens: 1000 }),
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+        ...extraHeaders,
+      },
+      body: JSON.stringify({ model, messages, stream: true, temperature: 0.7, max_tokens: 1000 }),
     });
 
     if (!response.ok) {
@@ -49,8 +66,7 @@ Your role:
           const { done, value } = await reader.read();
           if (done) { controller.enqueue(new TextEncoder().encode("data: [DONE]\n\n")); break; }
           const chunk = decoder.decode(value);
-          const lines = chunk.split("\n");
-          for (const line of lines) {
+          for (const line of chunk.split("\n")) {
             if (line.startsWith("data: ") && line !== "data: [DONE]") {
               try {
                 const data = JSON.parse(line.slice(6));

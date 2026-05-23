@@ -4,12 +4,22 @@ export async function POST(req: NextRequest) {
   const apiKey = req.headers.get("x-openai-key") || process.env.OPENAI_API_KEY;
   if (!apiKey) return NextResponse.json({ ok: false, error: "no_key" });
 
+  const isOpenRouter = apiKey.startsWith("sk-or-");
+  const url = isOpenRouter
+    ? "https://openrouter.ai/api/v1/chat/completions"
+    : "https://api.openai.com/v1/chat/completions";
+  const model = isOpenRouter ? "openai/gpt-4o-mini" : "gpt-4o-mini";
+
   try {
-    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+    const res = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+        ...(isOpenRouter ? { "HTTP-Referer": "https://ceo-dashboard-sep-thuan.vercel.app", "X-Title": "CEO Dashboard" } : {}),
+      },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model,
         messages: [{ role: "user", content: "hi" }],
         max_tokens: 5,
       }),
