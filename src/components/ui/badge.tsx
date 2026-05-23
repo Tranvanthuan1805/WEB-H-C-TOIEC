@@ -1,32 +1,29 @@
 import * as React from "react";
-import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
-const badgeVariants = cva(
-  "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold transition-colors",
-  {
-    variants: {
-      variant: {
-        default: "bg-[var(--primary)] text-white",
-        secondary: "bg-[var(--secondary)] text-[var(--secondary-foreground)]",
-        success: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
-        warning: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",
-        destructive: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
-        outline: "border border-[var(--border)] text-[var(--foreground)]",
-        purple: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
-        blue: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-      },
-    },
-    defaultVariants: { variant: "default" },
-  }
-);
+const variantStyles: Record<string, React.CSSProperties> = {
+  default:     { background:"var(--primary)", color:"#fff" },
+  secondary:   { background:"var(--bg-secondary)", color:"var(--muted)", border:"1px solid var(--border)" },
+  success:     { background:"rgba(16,185,129,0.12)", color:"#059669" },
+  warning:     { background:"rgba(245,158,11,0.12)", color:"#d97706" },
+  destructive: { background:"rgba(239,68,68,0.12)",  color:"#dc2626" },
+  outline:     { background:"transparent", border:"1px solid var(--border)", color:"var(--muted)" },
+  purple:      { background:"rgba(168,85,247,0.12)", color:"#9333ea" },
+  blue:        { background:"rgba(59,130,246,0.12)", color:"#2563eb" },
+};
 
-export interface BadgeProps
-  extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof badgeVariants> {}
-
-function Badge({ className, variant, ...props }: BadgeProps) {
-  return <div className={cn(badgeVariants({ variant }), className)} {...props} />;
+export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
+  variant?: keyof typeof variantStyles;
 }
 
-export { Badge, badgeVariants };
+function Badge({ className, variant = "default", style, ...props }: BadgeProps) {
+  return (
+    <span
+      className={cn("inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold leading-none", className)}
+      style={{ ...variantStyles[variant], ...style }}
+      {...props}
+    />
+  );
+}
+
+export { Badge };
