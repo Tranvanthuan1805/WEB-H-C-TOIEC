@@ -4,7 +4,7 @@ export async function POST(req: NextRequest) {
   try {
     const { message, context, locale, history } = await req.json();
 
-    const apiKey = process.env.OPENAI_API_KEY;
+    const apiKey = req.headers.get("x-openai-key") || process.env.OPENAI_API_KEY;
     if (!apiKey) {
       return NextResponse.json({ error: "No API key configured" }, { status: 503 });
     }

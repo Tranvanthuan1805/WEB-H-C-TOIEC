@@ -56,8 +56,10 @@ export default function ChatPage() {
 - Ngôn ngữ: ${locale === "vi" ? "Tiếng Việt" : "English"}`;
 
     try {
+      const storedKey = typeof window !== "undefined" ? localStorage.getItem("openai_api_key") : null;
       const res = await fetch("/api/chat", {
-        method:"POST", headers:{"Content-Type":"application/json"},
+        method:"POST",
+        headers:{ "Content-Type":"application/json", ...(storedKey ? { "x-openai-key": storedKey } : {}) },
         body: JSON.stringify({ message:msg, context, locale, history: chatMessages.slice(-10).map(m=>({role:m.role,content:m.content})) }),
       });
       if (!res.ok) throw new Error();

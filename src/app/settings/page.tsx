@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 import { motion } from "framer-motion";
 import { Settings, Globe, Moon, Sun, Bell, Send, Target, Key, CheckCircle } from "lucide-react";
@@ -15,11 +15,19 @@ export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
   const { locale, setLocale, telegramToken, telegramChatId, setTelegramConfig, toeicTarget, setToeicTarget } = useAppStore();
   const t = translations[locale];
-  const [tgToken, setTgToken]       = useState(telegramToken);
-  const [tgChatId, setTgChatId]     = useState(telegramChatId);
-  const [targetScore, setTargetScore] = useState(toeicTarget);
-  const [apiKey, setApiKey]         = useState("");
-  const [testingTg, setTestingTg]   = useState(false);
+  const [tgToken, setTgToken]         = useState("");
+  const [tgChatId, setTgChatId]       = useState("");
+  const [targetScore, setTargetScore] = useState(750);
+  const [apiKey, setApiKey]           = useState("");
+  const [testingTg, setTestingTg]     = useState(false);
+
+  // Sync after Zustand rehydrates from localStorage (SSR safe)
+  useEffect(() => {
+    const s = useAppStore.getState();
+    setTgToken(s.telegramToken);
+    setTgChatId(s.telegramChatId);
+    setTargetScore(s.toeicTarget);
+  }, []);
 
   function saveTelegram() {
     setTelegramConfig(tgToken, tgChatId);
