@@ -21,6 +21,7 @@ export default function SettingsPage() {
   const [apiKey, setApiKey]           = useState("");
   const [testingTg, setTestingTg]     = useState(false);
   const [hasSavedKey, setHasSavedKey] = useState(false);
+  const [testingKey, setTestingKey]   = useState(false);
 
   // Sync after Zustand rehydrates from localStorage (SSR safe)
   useEffect(() => {
@@ -77,6 +78,34 @@ export default function SettingsPage() {
     localStorage.removeItem("openai_api_key");
     setHasSavedKey(false);
     toast.success(locale === "vi" ? "Đã xóa API key" : "API key removed");
+  }
+
+  async function testApiKey() {
+    const key = localStorage.getItem("openai_api_key");
+    if (!key) return toast.error(locale === "vi" ? "Chưa có API key" : "No API key saved");
+    setTestingKey(true);
+    try {
+      const res = await fetch("/api/test-key", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-openai-key": key },
+      });
+      const data = await res.json();
+      if (data.ok) {
+        toast.success(locale === "vi" ? "✅ API key hoạt động tốt!" : "✅ API key works!");
+      } else {
+        const msgs: Record<string, string> = {
+          invalid_key:   locale === "vi" ? "❌ API key không hợp lệ hoặc hết hạn" : "❌ Invalid or expired API key",
+          quota_exceeded: locale === "vi" ? "💳 Tài khoản hết quota/credits" : "💳 Account quota/credits exhausted",
+          no_key:        locale === "vi" ? "🔑 Chưa có API key" : "🔑 No API key",
+          network_error: locale === "vi" ? "🌐 Lỗi kết nối mạng" : "🌐 Network error",
+        };
+        toast.error(msgs[data.error] || (locale === "vi" ? `Lỗi: ${data.error}` : `Error: ${data.error}`), { duration: 5000 });
+      }
+    } catch {
+      toast.error(locale === "vi" ? "Không thể kết nối server" : "Cannot reach server");
+    } finally {
+      setTestingKey(false);
+    }
   }
 
   const themeOptions = [
@@ -273,6 +302,13 @@ export default function SettingsPage() {
                 <Input value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder={hasSavedKey ? (locale === "vi" ? "Nhập key mới để thay thế..." : "Enter new key to replace...") : "sk-..."} type="password" className="flex-1" />
                 <Button onClick={saveApiKey} disabled={!apiKey.trim()}>{t.save}</Button>
               </div>
+              {hasSavedKey && (
+                <Button variant="outline" className="w-full" onClick={testApiKey} disabled={testingKey}>
+                  {testingKey
+                    ? (locale === "vi" ? "Đang kiểm tra..." : "Testing...")
+                    : (locale === "vi" ? "🔍 Kiểm tra API key" : "🔍 Test API key")}
+                </Button>
+              )}
               <div className="flex items-center gap-2 text-xs" style={{ color: "var(--muted)" }}>
                 <Bell className="w-3 h-3" />
                 {locale === "vi" ? "Bạn cũng có thể đặt OPENAI_API_KEY trong file .env.local" : "You can also set OPENAI_API_KEY in .env.local file"}
