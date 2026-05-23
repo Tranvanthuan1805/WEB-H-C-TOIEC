@@ -62,7 +62,10 @@ export default function ChatPage() {
         headers:{ "Content-Type":"application/json", ...(storedKey ? { "x-openai-key": storedKey } : {}) },
         body: JSON.stringify({ message:msg, context, locale, history: chatMessages.slice(-10).map(m=>({role:m.role,content:m.content})) }),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({ error: "unknown" }));
+        throw new Error(errData.error || "unknown");
+      }
 
       const reader = res.body?.getReader();
       const decoder = new TextDecoder();
@@ -82,13 +85,22 @@ export default function ChatPage() {
         }
       }
       addChatMessage({ id, role:"assistant", content: full || (locale==="vi"?"Xin lỗi, không thể trả lời lúc này.":"Sorry, unable to respond right now."), timestamp:new Date() });
-    } catch {
-      addChatMessage({
-        id:(Date.now()+1).toString(), role:"assistant", timestamp:new Date(),
-        content: locale==="vi"
-          ? `Sếp Thuần ơi, tôi chưa được kết nối AI.\n\nĐể dùng được AI chat:\n1. Lấy API key tại **platform.openai.com**\n2. Vào **Cài đặt** → Thêm API key\n\nSau khi cấu hình xong tôi sẽ sẵn sàng giúp Sếp! 🤖`
-          : `Boss Thuan, I'm not connected to AI yet.\n\nTo enable AI chat:\n1. Get API key at **platform.openai.com**\n2. Go to **Settings** → Add API key\n\nI'll be ready to help once configured! 🤖`,
-      });
+    } catch (e) {
+      const code = e instanceof Error ? e.message : "unknown";
+      const errMsg = (() => {
+        if (locale === "vi") {
+          if (code === "no_key")        return "🔑 Chưa có API key.\n\n1. Lấy key tại platform.openai.com\n2. Vào Cài đặt → nhập API key → Lưu";
+          if (code === "invalid_key")   return "❌ API key không hợp lệ hoặc hết hạn.\n\nVào Cài đặt → xóa key cũ → nhập lại key mới đúng từ platform.openai.com";
+          if (code === "quota_exceeded") return "💳 Tài khoản OpenAI hết quota.\n\nKiểm tra billing tại platform.openai.com/usage";
+          return "😔 Không thể kết nối AI. Kiểm tra lại API key và kết nối mạng.";
+        } else {
+          if (code === "no_key")        return "🔑 No API key configured.\n\n1. Get key at platform.openai.com\n2. Go to Settings → add API key → Save";
+          if (code === "invalid_key")   return "❌ Invalid or expired API key.\n\nGo to Settings → remove old key → enter a valid key from platform.openai.com";
+          if (code === "quota_exceeded") return "💳 OpenAI quota exceeded.\n\nCheck billing at platform.openai.com/usage";
+          return "😔 Cannot connect to AI. Check your API key and network connection.";
+        }
+      })();
+      addChatMessage({ id:(Date.now()+1).toString(), role:"assistant", timestamp:new Date(), content: errMsg });
     } finally {
       setIsLoading(false);
       setTimeout(() => inputRef.current?.focus(), 100);

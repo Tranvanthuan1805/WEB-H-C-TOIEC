@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useAppStore, type Employee } from "@/store/useAppStore";
 import { translations } from "@/lib/translations";
 import { formatCurrency } from "@/lib/utils";
+import { tgNotify } from "@/lib/telegram";
 
 const deptConfig: Record<string, { color:string; bg:string }> = {
   "Kỹ thuật":  { color:"#3b82f6", bg:"rgba(59,130,246,0.12)" },
@@ -60,8 +61,15 @@ export default function HRPage() {
 
   function handleSubmit() {
     if (!form.name.trim()) return toast.error(locale === "vi" ? "Tên không được để trống" : "Name is required");
-    if (editing) { updateEmployee(editing.id, form); toast.success(locale === "vi" ? "Đã cập nhật!" : "Updated!"); }
-    else { addEmployee({ ...form, id: Date.now().toString() }); toast.success(locale === "vi" ? "Đã thêm nhân viên mới!" : "Employee added!"); }
+    if (editing) {
+      updateEmployee(editing.id, form);
+      toast.success(locale === "vi" ? "Đã cập nhật!" : "Updated!");
+      tgNotify(`✏️ <b>Cập nhật nhân viên</b>\n👤 ${form.name}\n💼 ${form.position} · ${form.department}`);
+    } else {
+      addEmployee({ ...form, id: Date.now().toString() });
+      toast.success(locale === "vi" ? "Đã thêm nhân viên mới!" : "Employee added!");
+      tgNotify(`🧑‍💼 <b>Nhân viên mới</b>\n👤 ${form.name}\n💼 ${form.position} · ${form.department}\n💰 ${formatCurrency(form.salary)}/tháng`);
+    }
     setShowModal(false);
   }
 
@@ -161,7 +169,7 @@ export default function HRPage() {
                           onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.color="var(--muted)"}}>
                           <Edit className="w-3.5 h-3.5" />
                         </button>
-                        <button onClick={() => { deleteEmployee(emp.id); toast.success(locale==="vi"?"Đã xóa!":"Deleted!"); }}
+                        <button onClick={() => { deleteEmployee(emp.id); toast.success(locale==="vi"?"Đã xóa!":"Deleted!"); tgNotify(`🗑 <b>Xóa nhân viên</b>\n👤 ${emp.name} (${emp.department})`); }}
                           className="w-7 h-7 rounded-lg flex items-center justify-center transition-all"
                           style={{ color:"var(--muted)" }}
                           onMouseEnter={e=>{e.currentTarget.style.background="rgba(239,68,68,0.1)";e.currentTarget.style.color="#ef4444"}}

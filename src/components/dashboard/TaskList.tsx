@@ -3,6 +3,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle2, Circle, Plus, Trash2, AlertCircle, Clock, Filter } from "lucide-react";
 import { useAppStore } from "@/store/useAppStore";
+import { tgNotify } from "@/lib/telegram";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -42,7 +43,9 @@ export function TaskList() {
 
   function addQuickTask() {
     if (!newTitle.trim()) return;
-    addTask({ id: Date.now().toString(), title: newTitle.trim(), dueDate: todayStr, priority: "medium", status: "todo", category: "personal" });
+    const title = newTitle.trim();
+    addTask({ id: Date.now().toString(), title, dueDate: todayStr, priority: "medium", status: "todo", category: "personal" });
+    tgNotify(`📌 <b>Task mới</b>\n📝 ${title}`);
     setNewTitle("");
   }
 
@@ -123,7 +126,10 @@ export function TaskList() {
                 >
                   {/* Checkbox */}
                   <button
-                    onClick={() => updateTask(task.id, { status: isDone ? "todo" : "done" })}
+                    onClick={() => {
+                      updateTask(task.id, { status: isDone ? "todo" : "done" });
+                      if (!isDone) tgNotify(`✅ <b>Hoàn thành task</b>\n📝 ${task.title}`);
+                    }}
                     className="flex-shrink-0 transition-transform active:scale-90"
                   >
                     {isDone
@@ -158,7 +164,7 @@ export function TaskList() {
                       {locale === "vi" ? priorityConfig[task.priority].label_vi : priorityConfig[task.priority].label_en}
                     </Badge>
                     <button
-                      onClick={() => deleteTask(task.id)}
+                      onClick={() => { deleteTask(task.id); tgNotify(`🗑 <b>Xóa task</b>\n📝 ${task.title}`); }}
                       className="opacity-0 group-hover:opacity-100 w-6 h-6 flex items-center justify-center rounded-md transition-all"
                       style={{ color:"var(--muted)" }}
                       onMouseEnter={e => { e.currentTarget.style.background = "rgba(239,68,68,0.1)"; e.currentTarget.style.color = "#ef4444"; }}

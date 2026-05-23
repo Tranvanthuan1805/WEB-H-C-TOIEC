@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAppStore, type VocabWord, type StudySession } from "@/store/useAppStore";
 import { translations } from "@/lib/translations";
+import { tgNotify } from "@/lib/telegram";
 import { cn } from "@/lib/utils";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
@@ -55,6 +56,7 @@ export default function StudyPage() {
     if (!wordForm.word.trim()) return toast.error(locale==="vi"?"Nhập từ vựng":"Enter word");
     addVocabWord({ ...wordForm, id: Date.now().toString() });
     toast.success(locale==="vi"?"Đã thêm từ vựng!":"Word added!");
+    tgNotify(`📚 <b>Từ vựng mới</b>\n🔤 ${wordForm.word} (${wordForm.part})\n💡 ${wordForm.meaning}`);
     setShowVocabModal(false);
     setWordForm({ word:"", meaning:"", example:"", part:"noun", status:"new" });
   }
@@ -69,7 +71,9 @@ export default function StudyPage() {
       totalScore: sessionForm.listeningScore + sessionForm.readingScore,
       notes: sessionForm.notes,
     });
+    const total = sessionForm.listeningScore + sessionForm.readingScore;
     toast.success(locale==="vi"?"Đã lưu buổi học!":"Session saved!");
+    tgNotify(`📊 <b>Kết quả luyện thi TOEIC</b>\n🎯 Tổng: <b>${total}</b> điểm\n👂 Listening: ${sessionForm.listeningScore} | 📖 Reading: ${sessionForm.readingScore}\n⏱ ${sessionForm.duration} phút`);
     setShowSessionModal(false);
   }
 
@@ -194,7 +198,7 @@ export default function StudyPage() {
                       <p className="text-[13.5px] font-medium mb-1">{word.meaning}</p>
                       <p className="text-[12px] italic" style={{ color:"var(--muted)" }}>"{word.example}"</p>
                       <div className="flex gap-2 mt-3 pt-3" style={{ borderTop:"1px solid var(--border)" }}>
-                        <button onClick={() => updateVocabWord(word.id, { status:"mastered" })}
+                        <button onClick={() => { updateVocabWord(word.id, { status:"mastered" }); tgNotify(`🎓 <b>Thành thạo từ</b>\n🔤 ${word.word} — ${word.meaning}`); }}
                           className="flex-1 py-1.5 text-[12px] font-semibold rounded-lg transition-all"
                           style={{ background:"rgba(16,185,129,0.12)", color:"#059669" }}
                           onMouseEnter={e=>(e.currentTarget.style.opacity="0.75")}
@@ -306,7 +310,7 @@ export default function StudyPage() {
                       <RotateCcw className="w-4 h-4" />{locale==="vi"?"Ôn lại":"Review"}
                     </Button>
                     <Button className="flex-1 gap-2" style={{ background:"linear-gradient(135deg,#10b981,#34d399)" }}
-                      onClick={() => { updateVocabWord(flashcard.id,{status:"mastered"}); toast.success("✓"); startFlashcard(); }}>
+                      onClick={() => { updateVocabWord(flashcard.id,{status:"mastered"}); toast.success("✓"); tgNotify(`🎓 <b>Thành thạo từ (Flashcard)</b>\n🔤 ${flashcard.word} — ${flashcard.meaning}`); startFlashcard(); }}>
                       <CheckCircle className="w-4 h-4" />{locale==="vi"?"Thuộc rồi!":"Got it!"}
                     </Button>
                   </motion.div>

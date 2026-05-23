@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useAppStore, type Transaction, type Investment } from "@/store/useAppStore";
 import { translations } from "@/lib/translations";
 import { formatCurrency } from "@/lib/utils";
+import { tgNotify } from "@/lib/telegram";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
@@ -62,6 +63,10 @@ export default function FinancePage() {
     if (!txForm.amount || txForm.amount <= 0) return toast.error(locale === "vi" ? "Nhập số tiền hợp lệ" : "Enter valid amount");
     addTransaction({ ...txForm, id: Date.now().toString() });
     toast.success(locale === "vi" ? "Đã thêm giao dịch!" : "Transaction added!");
+    const sign = txForm.type === "income" ? "+" : "-";
+    const txEmoji = txForm.type === "income" ? "💰" : "💸";
+    const txLabel = txForm.type === "income" ? "Thu nhập mới" : "Chi tiêu mới";
+    tgNotify(`${txEmoji} <b>${txLabel}</b>\n${sign}${formatCurrency(txForm.amount)}\n📂 ${txForm.category} · ${txForm.description}`);
     setShowTxModal(false);
   }
 
@@ -69,6 +74,7 @@ export default function FinancePage() {
     if (!invForm.name.trim()) return toast.error(locale === "vi" ? "Nhập tên tài sản" : "Enter asset name");
     addInvestment({ ...invForm, id: Date.now().toString() });
     toast.success(locale === "vi" ? "Đã thêm khoản đầu tư!" : "Investment added!");
+    tgNotify(`📈 <b>Đầu tư mới</b>\n🏷 ${invForm.name}${invForm.symbol ? ` (${invForm.symbol})` : ""} · ${invForm.type}\n📊 x${invForm.quantity} @ ${formatCurrency(invForm.buyPrice, invForm.currency)}`);
     setShowInvModal(false);
   }
 

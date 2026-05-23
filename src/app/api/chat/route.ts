@@ -6,7 +6,7 @@ export async function POST(req: NextRequest) {
 
     const apiKey = req.headers.get("x-openai-key") || process.env.OPENAI_API_KEY;
     if (!apiKey) {
-      return NextResponse.json({ error: "No API key configured" }, { status: 503 });
+      return NextResponse.json({ error: "no_key" }, { status: 503 });
     }
 
     const systemPrompt = `You are a personal AI assistant for Sếp Thuần (Boss Thuan), a CEO who is also a student.
@@ -33,7 +33,11 @@ Your role:
       body: JSON.stringify({ model: "gpt-4o-mini", messages, stream: true, temperature: 0.7, max_tokens: 1000 }),
     });
 
-    if (!response.ok) throw new Error("OpenAI API error");
+    if (!response.ok) {
+      if (response.status === 401) return NextResponse.json({ error: "invalid_key" }, { status: 401 });
+      if (response.status === 429) return NextResponse.json({ error: "quota_exceeded" }, { status: 429 });
+      return NextResponse.json({ error: "api_error" }, { status: 500 });
+    }
 
     const stream = new ReadableStream({
       async start(controller) {
@@ -63,7 +67,7 @@ Your role:
     return new NextResponse(stream, {
       headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", Connection: "keep-alive" },
     });
-  } catch (error) {
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  } catch {
+    return NextResponse.json({ error: "api_error" }, { status: 500 });
   }
 }

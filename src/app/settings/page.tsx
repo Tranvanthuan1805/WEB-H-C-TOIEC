@@ -20,6 +20,7 @@ export default function SettingsPage() {
   const [targetScore, setTargetScore] = useState(750);
   const [apiKey, setApiKey]           = useState("");
   const [testingTg, setTestingTg]     = useState(false);
+  const [hasSavedKey, setHasSavedKey] = useState(false);
 
   // Sync after Zustand rehydrates from localStorage (SSR safe)
   useEffect(() => {
@@ -27,6 +28,7 @@ export default function SettingsPage() {
     setTgToken(s.telegramToken);
     setTgChatId(s.telegramChatId);
     setTargetScore(s.toeicTarget);
+    setHasSavedKey(!!localStorage.getItem("openai_api_key"));
   }, []);
 
   function saveTelegram() {
@@ -68,6 +70,13 @@ export default function SettingsPage() {
     localStorage.setItem("openai_api_key", apiKey);
     toast.success(locale === "vi" ? "Đã lưu API key!" : "API key saved!");
     setApiKey("");
+    setHasSavedKey(true);
+  }
+
+  function removeApiKey() {
+    localStorage.removeItem("openai_api_key");
+    setHasSavedKey(false);
+    toast.success(locale === "vi" ? "Đã xóa API key" : "API key removed");
   }
 
   const themeOptions = [
@@ -248,8 +257,20 @@ export default function SettingsPage() {
                   ? "Nhập OpenAI API Key để kích hoạt trợ lý AI. Key sẽ được lưu trong trình duyệt."
                   : "Enter your OpenAI API Key to enable AI assistant. Key is stored in browser only."}
               </p>
+              {hasSavedKey && (
+                <div className="flex items-center justify-between px-3 py-2 rounded-lg"
+                  style={{ background: "rgba(16,185,129,0.10)", border: "1px solid rgba(16,185,129,0.25)" }}>
+                  <div className="flex items-center gap-2 text-xs font-medium" style={{ color: "#059669" }}>
+                    <CheckCircle className="w-3.5 h-3.5" />
+                    {locale === "vi" ? "API key đã được lưu ✓" : "API key is saved ✓"}
+                  </div>
+                  <button onClick={removeApiKey} className="text-xs px-2 py-0.5 rounded" style={{ color: "#ef4444" }}>
+                    {locale === "vi" ? "Xóa" : "Remove"}
+                  </button>
+                </div>
+              )}
               <div className="flex gap-2">
-                <Input value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder="sk-..." type="password" className="flex-1" />
+                <Input value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder={hasSavedKey ? (locale === "vi" ? "Nhập key mới để thay thế..." : "Enter new key to replace...") : "sk-..."} type="password" className="flex-1" />
                 <Button onClick={saveApiKey} disabled={!apiKey.trim()}>{t.save}</Button>
               </div>
               <div className="flex items-center gap-2 text-xs" style={{ color: "var(--muted)" }}>
